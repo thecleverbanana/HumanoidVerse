@@ -21,7 +21,7 @@ def compute_returns(self, rewards, values, dones, last_values, gamma, lam):
         
 class RolloutStorage(nn.Module):
 
-    def __init__(self, num_envs, num_transitions_per_env, device='cpu'):
+    def __init__(self, num_envs, num_transitions_per_env, device='cuda'):
         
         super().__init__()
 
