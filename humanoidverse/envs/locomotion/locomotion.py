@@ -24,7 +24,13 @@ class LeggedRobotLocomotion(LeggedRobotBase):
         self.init_done = True
         # import ipdb; ipdb.set_trace()
         if config.robot.motion.get("hips_link", None):
-            self.hips_dof_id = [self.simulator._body_list.index(link) - 1 for link in config.robot.motion.hips_link] # Yuanhang: -1 for the base link (pelvis)
+            # self.hips_dof_id = [self.simulator._body_list.index(link) - 1 for link in config.robot.motion.hips_link] # Yuanhang: -1 for the base link (pelvis)
+            if hasattr(self.simulator, "_body_list"):
+                self.hips_dof_id = [self.simulator._body_list.index(link) - 1 for link in config.robot.motion.hips_link]
+            else:
+                print("[Genesis Warning] _body_list not found. Using default hips_dof_id indices [0, 1, 2]")
+                self.hips_dof_id = [0, 1, 2]  # ✅ <-- Replace with the correct values for your Genesis robot if known
+
 
     def _init_buffers(self):
         super()._init_buffers()
