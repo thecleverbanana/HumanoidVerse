@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 
 from humanoidverse.agents.modules.ppo_modules import PPOActor, PPOCritic
 from humanoidverse.agents.modules.data_utils import RolloutStorage
@@ -584,7 +585,7 @@ class PPO(BaseAlgo):
         self._pre_evaluate_policy()
         actor_state = self._create_actor_state()
         step = 0
-        self.eval_policy = self._get_inference_policy()
+        
         obs_dict = self.env.reset_all()
         init_actions = torch.zeros(self.env.num_envs, self.num_act, device=self.device)
         actor_state.update({"obs": obs_dict, "actions": init_actions})
@@ -596,6 +597,45 @@ class PPO(BaseAlgo):
             actor_state = self._post_eval_env_step(actor_state)
             step += 1
         self._post_evaluate_policy()
+          
+    import time
+    def evaluate_with_action_sequence(self, npz_path: str):
+        self._create_eval_callbacks()
+        self._pre_evaluate_policy()
+        self.eval_policy = lambda obs: torch.zeros(self.env.num_envs, self.num_act, device=self.device)
+    
+        data = np.load(npz_path)
+        action_sequence = torch.from_numpy(data["actions"]).float().to(self.device)
+        timestamps = data["time"]  # [T]
+    
+        step = 0
+        T = action_sequence.shape[0]
+        actor_state = {}
+    
+        obs_dict = self.env.reset_all()
+        actor_state["obs"] = obs_dict
+    
+        start_time = time.time()
+    
+        while step < T:
+            actor_state["step"] = step
+            actor_state = self._pre_eval_env_step(actor_state)
+            action = action_sequence[step]
+            if action.ndim == 1:  # shape [num_act]
+                action = action.unsqueeze(0)  # -> [1, num_act]
+            actor_state["actions"] = action
+            print(action)
+            actor_state = self.env_step(actor_state)
+            actor_state = self._post_eval_env_step(actor_state)
+            step += 1
+    
+            # Sync to timestamp
+            if step < T:
+                target_time = timestamps[step]
+                now = time.time() - start_time
+                sleep_time = target_time - now
+                if 0 < sleep_time < 10:
+                    time.sleep(sleep_time)
 
     def _create_actor_state(self):
         return {"done_indices": [], "stop": False}

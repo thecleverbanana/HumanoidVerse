@@ -519,12 +519,13 @@ class LeggedRobotBase(BaseTask):
         self._post_config_observation_callback()
 
     def _post_config_observation_callback(self):
-        self.obs_buf_dict = dict()
-        for obs_key, obs_config in self.config.obs.obs_dict.items():
-            obs_keys = sorted(obs_config)
-            # print("obs_keys", obs_keys)
-            self.obs_buf_dict[obs_key] = torch.cat([self.obs_buf_dict_raw[obs_key][key] for key in obs_keys], dim=-1)
-    
+         self.obs_buf_dict = dict()
+         for obs_key, obs_config in self.config.obs.obs_dict.items():
+             obs_keys = sorted(obs_config)
+             # print("obs_keys", obs_keys)
+             self.obs_buf_dict[obs_key] = torch.cat([self.obs_buf_dict_raw[obs_key][key] for key in obs_keys], dim=-1)
+
+
     def _compute_torques(self, actions):
         """ Compute torques from actions.
             Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
